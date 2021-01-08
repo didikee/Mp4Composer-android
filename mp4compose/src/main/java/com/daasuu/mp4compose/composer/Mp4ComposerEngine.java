@@ -1,10 +1,16 @@
 package com.daasuu.mp4compose.composer;
 
-import android.media.*;
+import android.annotation.TargetApi;
+import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
+import android.media.MediaExtractor;
+import android.media.MediaFormat;
+import android.media.MediaMetadataRetriever;
+import android.media.MediaMuxer;
 import android.opengl.EGLContext;
 import android.os.Build;
 import android.util.Size;
-import androidx.annotation.NonNull;
+
 import com.daasuu.mp4compose.FillMode;
 import com.daasuu.mp4compose.FillModeCustomItem;
 import com.daasuu.mp4compose.Rotation;
@@ -16,12 +22,16 @@ import com.daasuu.mp4compose.source.DataSource;
 import java.io.FileDescriptor;
 import java.io.IOException;
 
+import androidx.annotation.NonNull;
+
 
 // Refer: https://github.com/ypresto/android-transcoder/blob/master/lib/src/main/java/net/ypresto/androidtranscoder/engine/MediaTranscoderEngine.java
 
 /**
  * Internal engine, do not use this directly.
+ * TODO 兼容21以下版本
  */
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 class Mp4ComposerEngine {
 
     private static final String TAG = "Mp4ComposerEngine";
@@ -130,10 +140,10 @@ class Mp4ComposerEngine {
                 final MediaFormat inputMediaFormat = mediaExtractor.getTrackFormat(audioTrackIndex);
                 final MediaFormat outputMediaFormat = createAudioOutputFormat(inputMediaFormat);
 
-                if( timeScale >= 0.99 && timeScale <= 1.01  && outputMediaFormat.equals(inputMediaFormat)) {
+                if (timeScale >= 0.99 && timeScale <= 1.01 && outputMediaFormat.equals(inputMediaFormat)) {
                     audioComposer = new AudioComposer(mediaExtractor, audioTrackIndex, muxRender, trimStartMs, trimEndMs, logger);
                 } else {
-                    audioComposer = new RemixAudioComposer(mediaExtractor, audioTrackIndex, outputMediaFormat, muxRender, timeScale, isPitchChanged , trimStartMs, trimEndMs);
+                    audioComposer = new RemixAudioComposer(mediaExtractor, audioTrackIndex, outputMediaFormat, muxRender, timeScale, isPitchChanged, trimStartMs, trimEndMs);
                 }
 
                 audioComposer.setup();

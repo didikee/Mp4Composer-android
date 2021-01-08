@@ -1,13 +1,14 @@
 
 package com.daasuu.mp4compose.composer;
 
+import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.opengl.EGLContext;
-import android.util.Log;
+import android.os.Build;
 import android.util.Size;
-import androidx.annotation.NonNull;
+
 import com.daasuu.mp4compose.FillMode;
 import com.daasuu.mp4compose.FillModeCustomItem;
 import com.daasuu.mp4compose.Rotation;
@@ -18,8 +19,11 @@ import com.daasuu.mp4compose.logger.Logger;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.NonNull;
+
 // Refer: https://android.googlesource.com/platform/cts/+/lollipop-release/tests/tests/media/src/android/media/cts/ExtractDecodeEditEncodeMuxTest.java
 // Refer: https://github.com/ypresto/android-transcoder/blob/master/lib/src/main/java/net/ypresto/androidtranscoder/engine/VideoTrackTranscoder.java
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 class VideoComposer {
     private static final String TAG = "VideoComposer";
     private static final int DRAIN_STATE_NONE = 0;

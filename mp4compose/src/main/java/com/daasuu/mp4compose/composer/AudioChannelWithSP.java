@@ -1,7 +1,9 @@
 package com.daasuu.mp4compose.composer;
 
+import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.os.Build;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -10,7 +12,7 @@ import java.nio.ShortBuffer;
 /**
  * Created by TAPOS DATTA on 22,May,2020
  */
-
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class AudioChannelWithSP extends BaseAudioChannel{
 
     private static final String TAG = "AUDIO_CHANNEL_WITH_SONIC";

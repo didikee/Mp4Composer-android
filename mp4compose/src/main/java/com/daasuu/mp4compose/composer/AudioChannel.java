@@ -1,7 +1,9 @@
 package com.daasuu.mp4compose.composer;
 
+import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.os.Build;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -12,7 +14,7 @@ import java.nio.ShortBuffer;
 /**
  * Created by sudamasayuki2 on 2018/02/22.
  */
-
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 class AudioChannel extends BaseAudioChannel {
 
     AudioChannel(final MediaCodec decoder,

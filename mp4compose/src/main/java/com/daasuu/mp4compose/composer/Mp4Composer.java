@@ -30,7 +30,7 @@ import java.util.concurrent.Executors;
 /**
  * Created by sudamasayuki on 2017/11/15.
  */
-
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class Mp4Composer {
 
     private final static String TAG = Mp4Composer.class.getSimpleName();

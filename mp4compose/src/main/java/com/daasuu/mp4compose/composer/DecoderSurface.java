@@ -1,5 +1,6 @@
 package com.daasuu.mp4compose.composer;
 
+import android.annotation.TargetApi;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.EGLContext;
@@ -7,10 +8,9 @@ import android.opengl.EGLDisplay;
 import android.opengl.EGLSurface;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.os.Build;
 import android.util.Size;
 import android.view.Surface;
-
-import androidx.annotation.NonNull;
 
 import com.daasuu.mp4compose.FillMode;
 import com.daasuu.mp4compose.FillModeCustomItem;
@@ -21,6 +21,8 @@ import com.daasuu.mp4compose.gl.GlPreviewFilter;
 import com.daasuu.mp4compose.gl.GlSurfaceTexture;
 import com.daasuu.mp4compose.logger.Logger;
 import com.daasuu.mp4compose.utils.EglUtil;
+
+import androidx.annotation.NonNull;
 
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
@@ -47,6 +49,7 @@ import static android.opengl.GLES20.GL_TEXTURE_2D;
  * By default, the Surface will be using a BufferQueue in asynchronous mode, so we
  * can potentially drop frames.
  */
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 class DecoderSurface implements SurfaceTexture.OnFrameAvailableListener {
     private static final String TAG = "DecoderSurface";
     private static final boolean VERBOSE = false;

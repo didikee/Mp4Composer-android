@@ -5,16 +5,18 @@ package com.daasuu.mp4compose.composer;
  *
  */
 
+import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.os.Build;
 
 import com.daasuu.mp4compose.SampleType;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 class RemixAudioComposer implements IAudioComposer {
 
     private static final SampleType SAMPLE_TYPE = SampleType.AUDIO;
