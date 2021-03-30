@@ -9,8 +9,7 @@ import android.opengl.EGL14;
 import android.opengl.EGLContext;
 import android.os.Build;
 import android.util.Size;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
 import com.daasuu.mp4compose.FillMode;
 import com.daasuu.mp4compose.FillModeCustomItem;
 import com.daasuu.mp4compose.Rotation;
@@ -26,6 +25,9 @@ import com.daasuu.mp4compose.source.UriDataSource;
 import java.io.FileDescriptor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Created by sudamasayuki on 2017/11/15.
@@ -175,7 +177,7 @@ public class Mp4Composer {
         return this;
     }
 
-    public Mp4Composer changePitch(final boolean isPitchChanged){
+    public Mp4Composer changePitch(final boolean isPitchChanged) {
         this.isPitchChanged = isPitchChanged;
         return this;
     }
@@ -221,6 +223,14 @@ public class Mp4Composer {
         return executorService;
     }
 
+    public Mp4Composer startSync() {
+        //if we're already composing, calling this should do nothing
+        if (engine != null) {
+            return this;
+        }
+        runInternal();
+        return this;
+    }
 
     public Mp4Composer start() {
         //if we're already composing, calling this should do nothing
@@ -231,130 +241,10 @@ public class Mp4Composer {
         getExecutorService().execute(new Runnable() {
             @Override
             public void run() {
-                if (logger == null) {
-                    logger = new AndroidLogger();
-                }
-                engine = new Mp4ComposerEngine(logger);
-
-                engine.setProgressCallback(new Mp4ComposerEngine.ProgressCallback() {
-                    @Override
-                    public void onProgress(final double progress) {
-                        if (listener != null) {
-                            listener.onProgress(progress);
-                        }
-                    }
-
-                    @Override
-                    public void onCurrentWrittenVideoTime(long timeUs) {
-                        if (listener != null) {
-                            listener.onCurrentWrittenVideoTime(timeUs);
-                        }
-                    }
-                });
-
-                final Integer videoRotate = getVideoRotation(srcDataSource);
-                final Size srcVideoResolution = getVideoResolution(srcDataSource);
-
-                if (srcVideoResolution == null || videoRotate == null) {
-                    notifyListenerOfFailureAndShutdown(new UnsupportedOperationException("File type unsupported, path: " + srcDataSource));
-                    return;
-                }
-
-                if (filter == null) {
-                    filter = new GlFilter();
-                }
-
-                if (fillMode == null) {
-                    fillMode = FillMode.PRESERVE_ASPECT_FIT;
-                }
-                if (fillMode == FillMode.CUSTOM && fillModeCustomItem == null) {
-                    notifyListenerOfFailureAndShutdown(new IllegalAccessException("FillMode.CUSTOM must need fillModeCustomItem."));
-                    return;
-                }
-
-                if (fillModeCustomItem != null) {
-                    fillMode = FillMode.CUSTOM;
-                }
-
-                if (outputResolution == null) {
-                    if (fillMode == FillMode.CUSTOM) {
-                        outputResolution = srcVideoResolution;
-                    } else {
-                        Rotation rotate = Rotation.fromInt(rotation.getRotation() + videoRotate);
-                        if (rotate == Rotation.ROTATION_90 || rotate == Rotation.ROTATION_270) {
-                            outputResolution = new Size(srcVideoResolution.getHeight(), srcVideoResolution.getWidth());
-                        } else {
-                            outputResolution = srcVideoResolution;
-                        }
-                    }
-                }
-
-                if (timeScale < 0.125f) {
-                    timeScale = 0.125f;
-                }else if(timeScale > 8f){
-                    timeScale = 8f;
-                }
-
-                if (shareContext == null) {
-                    shareContext = EGL14.EGL_NO_CONTEXT;
-                }
-
-                logger.debug(TAG, "rotation = " + (rotation.getRotation() + videoRotate));
-                logger.debug(TAG, "rotation = " + Rotation.fromInt(rotation.getRotation() + videoRotate));
-                logger.debug(TAG, "inputResolution width = " + srcVideoResolution.getWidth() + " height = " + srcVideoResolution.getHeight());
-                logger.debug(TAG, "outputResolution width = " + outputResolution.getWidth() + " height = " + outputResolution.getHeight());
-                logger.debug(TAG, "fillMode = " + fillMode);
-
-                try {
-                    if (bitrate < 0) {
-                        bitrate = calcBitRate(outputResolution.getWidth(), outputResolution.getHeight());
-                    }
-                    engine.compose(
-                            srcDataSource,
-                            destPath,
-                            destFileDescriptor,
-                            outputResolution,
-                            filter,
-                            bitrate,
-                            mute,
-                            Rotation.fromInt(rotation.getRotation() + videoRotate),
-                            srcVideoResolution,
-                            fillMode,
-                            fillModeCustomItem,
-                            timeScale,
-                            isPitchChanged,
-                            flipVertical,
-                            flipHorizontal,
-                            trimStartMs,
-                            trimEndMs,
-                            videoFormatMimeType,
-                            shareContext
-                    );
-
-                } catch (Exception e) {
-                    if (e instanceof MediaCodec.CodecException) {
-                        logger.error(TAG, "This devicel cannot codec with that setting. Check width, height, bitrate and video format.", e);
-                        notifyListenerOfFailureAndShutdown(e);
-                        return;
-                    }
-
-                    logger.error(TAG, "Unable to compose the engine", e);
-                    notifyListenerOfFailureAndShutdown(e);
-                    return;
-                }
-
-                if (listener != null) {
-                    if (engine.isCanceled()) {
-                        listener.onCanceled();
-                    } else {
-                        listener.onCompleted();
-                    }
-                }
+                runInternal();
                 executorService.shutdown();
-                engine = null;
             }
         });
-
         return this;
     }
 
@@ -371,6 +261,130 @@ public class Mp4Composer {
         if (engine != null) {
             engine.cancel();
         }
+    }
+
+    private void runInternal() {
+        if (logger == null) {
+            logger = new AndroidLogger();
+        }
+        engine = new Mp4ComposerEngine(logger);
+
+        engine.setProgressCallback(new Mp4ComposerEngine.ProgressCallback() {
+            @Override
+            public void onProgress(final double progress) {
+                if (listener != null) {
+                    listener.onProgress(progress);
+                }
+            }
+
+            @Override
+            public void onCurrentWrittenVideoTime(long timeUs) {
+                if (listener != null) {
+                    listener.onCurrentWrittenVideoTime(timeUs);
+                }
+            }
+        });
+
+        final Integer videoRotate = getVideoRotation(srcDataSource);
+        final Size srcVideoResolution = getVideoResolution(srcDataSource);
+
+        if (srcVideoResolution == null || videoRotate == null) {
+            notifyListenerOfFailureAndShutdown(new UnsupportedOperationException("File type unsupported, path: " + srcDataSource));
+            return;
+        }
+
+        if (filter == null) {
+            filter = new GlFilter();
+        }
+
+        if (fillMode == null) {
+            fillMode = FillMode.PRESERVE_ASPECT_FIT;
+        }
+        if (fillMode == FillMode.CUSTOM && fillModeCustomItem == null) {
+            notifyListenerOfFailureAndShutdown(new IllegalAccessException("FillMode.CUSTOM must need fillModeCustomItem."));
+            return;
+        }
+
+        if (fillModeCustomItem != null) {
+            fillMode = FillMode.CUSTOM;
+        }
+
+        if (outputResolution == null) {
+            if (fillMode == FillMode.CUSTOM) {
+                outputResolution = srcVideoResolution;
+            } else {
+                Rotation rotate = Rotation.fromInt(rotation.getRotation() + videoRotate);
+                if (rotate == Rotation.ROTATION_90 || rotate == Rotation.ROTATION_270) {
+                    outputResolution = new Size(srcVideoResolution.getHeight(), srcVideoResolution.getWidth());
+                } else {
+                    outputResolution = srcVideoResolution;
+                }
+            }
+        }
+
+        if (timeScale < 0.125f) {
+            timeScale = 0.125f;
+        } else if (timeScale > 8f) {
+            timeScale = 8f;
+        }
+
+        if (shareContext == null) {
+            shareContext = EGL14.EGL_NO_CONTEXT;
+        }
+
+        logger.debug(TAG, "rotation = " + (rotation.getRotation() + videoRotate));
+        logger.debug(TAG, "rotation = " + Rotation.fromInt(rotation.getRotation() + videoRotate));
+        logger.debug(TAG, "inputResolution width = " + srcVideoResolution.getWidth() + " height = " + srcVideoResolution.getHeight());
+        logger.debug(TAG, "outputResolution width = " + outputResolution.getWidth() + " height = " + outputResolution.getHeight());
+        logger.debug(TAG, "fillMode = " + fillMode);
+
+        try {
+            if (bitrate < 0) {
+                bitrate = calcBitRate(outputResolution.getWidth(), outputResolution.getHeight());
+            }
+            engine.compose(
+                    srcDataSource,
+                    destPath,
+                    destFileDescriptor,
+                    outputResolution,
+                    filter,
+                    bitrate,
+                    mute,
+                    Rotation.fromInt(rotation.getRotation() + videoRotate),
+                    srcVideoResolution,
+                    fillMode,
+                    fillModeCustomItem,
+                    timeScale,
+                    isPitchChanged,
+                    flipVertical,
+                    flipHorizontal,
+                    trimStartMs,
+                    trimEndMs,
+                    videoFormatMimeType,
+                    shareContext
+            );
+
+        } catch (Exception e) {
+            if (e instanceof MediaCodec.CodecException) {
+                logger.error(TAG, "This devicel cannot codec with that setting. Check width, height, bitrate and video format.", e);
+                notifyListenerOfFailureAndShutdown(e);
+                return;
+            }
+
+            logger.error(TAG, "Unable to compose the engine", e);
+            notifyListenerOfFailureAndShutdown(e);
+            return;
+        }
+
+        if (listener != null) {
+            if (engine.isCanceled()) {
+                listener.onCanceled();
+            } else {
+                listener.onCompleted();
+            }
+        }
+        engine = null;
+        //executorService.shutdown();
     }
 
 
